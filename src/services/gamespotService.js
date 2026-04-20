@@ -1,10 +1,11 @@
 import axios from 'axios';
+import jsonp from 'jsonp';
 
 // GameSpot API Configuration
 const GAMESPOT_BASE_URL = 'http://www.gamespot.com/api';
 const API_KEY = process.env.REACT_APP_GAMESPOT_API_KEY || process.env.REACT_APP_IGDB_API_KEY;
 
-// Create axios instance with GameSpot configuration
+// Create axios instance with GameSpot configuration for server-side requests
 const gamespotApi = axios.create({
   baseURL: GAMESPOT_BASE_URL,
   timeout: 10000,
@@ -37,6 +38,35 @@ gamespotApi.interceptors.response.use(
     throw error;
   }
 );
+
+// JSONP helper function for browser requests
+const gamespotJsonpRequest = (endpoint, params = {}) => {
+  return new Promise((resolve, reject) => {
+    const url = `${GAMESPOT_BASE_URL}${endpoint}`;
+    const queryParams = new URLSearchParams({
+      ...params,
+      api_key: API_KEY,
+      format: 'jsonp',
+    });
+
+    const fullUrl = `${url}?${queryParams.toString()}`;
+
+    jsonp(fullUrl, { timeout: 10000 }, (err, data) => {
+      if (err) {
+        console.error('GameSpot JSONP Error:', err);
+        reject(err);
+        return;
+      }
+
+      if (data.status_code !== 1) {
+        reject(new Error(data.error || 'GameSpot API error'));
+        return;
+      }
+
+      resolve(data);
+    });
+  });
+};
 
 // Transform GameSpot game data to our app format
 const transformGameSpotGame = (game) => {
@@ -83,20 +113,16 @@ export const gamespotService = {
   fetchPopularGames: async (offset = 0, limit = 20) => {
     try {
       console.log('Fetching popular games from GameSpot API...');
-      const response = await gamespotApi.get('/games/', {
-        params: {
-          sort: 'score:desc',
-          limit,
-          offset,
-          field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url,videos_api_url,articles_api_url,reviews_api_url,images_api_url',
-        },
+
+      // Use JSONP for browser compatibility
+      const data = await gamespotJsonpRequest('/games/', {
+        sort: 'score:desc',
+        limit: limit.toString(),
+        offset: offset.toString(),
+        field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url,videos_api_url,articles_api_url,reviews_api_url,images_api_url',
       });
 
-      if (response.data.status_code !== 1) {
-        throw new Error(response.data.error || 'GameSpot API error');
-      }
-
-      const games = response.data.results.map(transformGameSpotGame);
+      const games = data.results.map(transformGameSpotGame);
       console.log(`Fetched ${games.length} games from GameSpot API`);
       return games;
     } catch (error) {
@@ -109,19 +135,15 @@ export const gamespotService = {
   searchGames: async (query, limit = 20) => {
     try {
       console.log(`Searching GameSpot API for: "${query}"`);
-      const response = await gamespotApi.get('/games/', {
-        params: {
-          filter: `name:${query}`,
-          limit,
-          field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url,videos_api_url,articles_api_url,reviews_api_url,images_api_url',
-        },
+
+      // Use JSONP for browser compatibility
+      const data = await gamespotJsonpRequest('/games/', {
+        filter: `name:${query}`,
+        limit: limit.toString(),
+        field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url,videos_api_url,articles_api_url,reviews_api_url,images_api_url',
       });
 
-      if (response.data.status_code !== 1) {
-        throw new Error(response.data.error || 'GameSpot API error');
-      }
-
-      const games = response.data.results.map(transformGameSpotGame);
+      const games = data.results.map(transformGameSpotGame);
       console.log(`Found ${games.length} games matching "${query}"`);
       return games;
     } catch (error) {
@@ -134,22 +156,18 @@ export const gamespotService = {
   fetchGameById: async (id) => {
     try {
       console.log(`Fetching game details for ID: ${id}`);
-      const response = await gamespotApi.get('/games/', {
-        params: {
-          filter: `id:${id}`,
-          field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url,videos_api_url,articles_api_url,reviews_api_url,images_api_url',
-        },
+
+      // Use JSONP for browser compatibility
+      const data = await gamespotJsonpRequest('/games/', {
+        filter: `id:${id}`,
+        field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url,videos_api_url,articles_api_url,reviews_api_url,images_api_url',
       });
 
-      if (response.data.status_code !== 1) {
-        throw new Error(response.data.error || 'GameSpot API error');
-      }
-
-      if (!response.data.results || response.data.results.length === 0) {
+      if (!data.results || data.results.length === 0) {
         throw new Error('Game not found');
       }
 
-      const game = transformGameSpotGame(response.data.results[0]);
+      const game = transformGameSpotGame(data.results[0]);
       console.log(`Fetched game: ${game.title}`);
       return game;
     } catch (error) {
@@ -162,20 +180,16 @@ export const gamespotService = {
   fetchGamesByGenre: async (genreName, limit = 20) => {
     try {
       console.log(`Fetching games for genre: ${genreName}`);
-      const response = await gamespotApi.get('/games/', {
-        params: {
-          filter: `genres:${genreName}`,
-          sort: 'score:desc',
-          limit,
-          field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url',
-        },
+
+      // Use JSONP for browser compatibility
+      const data = await gamespotJsonpRequest('/games/', {
+        filter: `genres:${genreName}`,
+        sort: 'score:desc',
+        limit: limit.toString(),
+        field_list: 'id,name,image,deck,description,genres,themes,franchises,release_date,platforms,developers,publishers,score,site_detail_url',
       });
 
-      if (response.data.status_code !== 1) {
-        throw new Error(response.data.error || 'GameSpot API error');
-      }
-
-      const games = response.data.results.map(transformGameSpotGame);
+      const games = data.results.map(transformGameSpotGame);
       console.log(`Found ${games.length} games in genre "${genreName}"`);
       return games;
     } catch (error) {
@@ -188,20 +202,16 @@ export const gamespotService = {
   fetchGameReviews: async (gameId, limit = 10) => {
     try {
       console.log(`Fetching reviews for game ID: ${gameId}`);
-      const response = await gamespotApi.get('/reviews/', {
-        params: {
-          filter: `game:${gameId}`,
-          sort: 'publish_date:desc',
-          limit,
-          field_list: 'id,title,deck,score,authors,publish_date,site_detail_url',
-        },
+
+      // Use JSONP for browser compatibility
+      const data = await gamespotJsonpRequest('/reviews/', {
+        filter: `game:${gameId}`,
+        sort: 'publish_date:desc',
+        limit: limit.toString(),
+        field_list: 'id,title,deck,score,authors,publish_date,site_detail_url',
       });
 
-      if (response.data.status_code !== 1) {
-        throw new Error(response.data.error || 'GameSpot API error');
-      }
-
-      const reviews = response.data.results.map(review => ({
+      const reviews = data.results.map(review => ({
         id: review.id,
         title: review.title,
         deck: review.deck,
@@ -223,19 +233,15 @@ export const gamespotService = {
   fetchGameImages: async (gameId, limit = 10) => {
     try {
       console.log(`Fetching images for game ID: ${gameId}`);
-      const response = await gamespotApi.get('/images/', {
-        params: {
-          association: gameId,
-          limit,
-          field_list: 'id,site_detail_url,icon_url,medium_url,screen_url,small_url,super_url,thumb_url,tiny_url,screen_tiny,square_tiny,original',
-        },
+
+      // Use JSONP for browser compatibility
+      const data = await gamespotJsonpRequest('/images/', {
+        association: gameId,
+        limit: limit.toString(),
+        field_list: 'id,site_detail_url,icon_url,medium_url,screen_url,small_url,super_url,thumb_url,tiny_url,screen_tiny,square_tiny,original',
       });
 
-      if (response.data.status_code !== 1) {
-        throw new Error(response.data.error || 'GameSpot API error');
-      }
-
-      const images = response.data.results.map(image => ({
+      const images = data.results.map(image => ({
         id: image.id,
         site_detail_url: image.site_detail_url,
         icon_url: image.icon_url,
