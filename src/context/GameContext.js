@@ -1,9 +1,5 @@
 import { createContext, useState, useCallback } from 'react';
-import {
-  fetchPopularGames,
-  searchGames as searchGamesAPI,
-  fetchGameById as fetchGameByIdAPI
-} from '../services/igdbService';
+import { gamespotService } from '../services/gamespotService';
 
 // Mock data fallback
 const mockGames = [
@@ -109,20 +105,20 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Fetch from IGDB API - this is the primary source
-      console.log('📡 Fetching games from IGDB API...');
+      // Fetch from GameSpot API - this is the primary source
+      console.log('📡 Fetching games from GameSpot API...');
       const offset = (page - 1) * pageSize;
-      const data = await fetchPopularGames(offset, pageSize);
-      console.log(`✅ Successfully loaded ${data.results.length} real games from IGDB`);
-      setGames(data.results);
+      const data = await gamespotService.fetchPopularGames(offset, pageSize);
+      console.log(`✅ Successfully loaded ${data.length} real games from GameSpot`);
+      setGames(data);
       setPagination({
-        count: data.results.length,
-        next: data.results.length === pageSize ? page + 1 : null,
+        count: data.length,
+        next: data.length === pageSize ? page + 1 : null,
         previous: page > 1 ? page - 1 : null,
       });
     } catch (err) {
-      console.warn('⚠️ IGDB API failed, falling back to mock data:', err.message);
-      // Only fallback to mock data if IGDB API truly fails
+      console.warn('⚠️ GameSpot API failed, falling back to mock data:', err.message);
+      // Only fallback to mock data if GameSpot API truly fails
       setGames(mockGames);
       setPagination({
         count: mockGames.length,
@@ -144,10 +140,10 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Search via IGDB API - primary source
-      console.log(`🔍 Searching IGDB API for: "${query}"`);
-      const data = await searchGamesAPI(query, 20);
-      console.log(`✅ Found ${data.length} real games from IGDB matching "${query}"`);
+      // Search via GameSpot API - primary source
+      console.log(`🔍 Searching GameSpot API for: "${query}"`);
+      const data = await gamespotService.searchGames(query, 20);
+      console.log(`✅ Found ${data.length} real games from GameSpot matching "${query}"`);
       setGames(data);
       setPagination({
         count: data.length,
@@ -155,7 +151,7 @@ export function GameProvider({ children }) {
         previous: null,
       });
     } catch (err) {
-      console.warn(`⚠️ IGDB API search failed, searching mock data:`, err.message);
+      console.warn(`⚠️ GameSpot API search failed, searching mock data:`, err.message);
       // Fallback to mock data search
       const filteredGames = mockGames.filter(game =>
         game.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -178,20 +174,20 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Fetch from IGDB API - primary source
-      console.log(`📡 Fetching game details from IGDB API (ID: ${gameId})`);
-      const data = await fetchGameByIdAPI(gameId);
-      console.log(`✅ Successfully loaded real game data from IGDB: ${data.title}`);
+      // Fetch from GameSpot API - primary source
+      console.log(`📡 Fetching game details from GameSpot API (ID: ${gameId})`);
+      const data = await gamespotService.fetchGameById(gameId);
+      console.log(`✅ Successfully loaded real game data from GameSpot: ${data.title}`);
       return data;
     } catch (err) {
-      console.warn(`⚠️ IGDB API fetch failed, looking in mock data (ID: ${gameId}):`, err.message);
+      console.warn(`⚠️ GameSpot API fetch failed, looking in mock data (ID: ${gameId}):`, err.message);
       // Fallback to mock data
       const game = mockGames.find(g => g.id === parseInt(gameId));
       if (game) {
         console.log(`✅ Found mock game: ${game.title}`);
         return game;
       }
-      throw new Error('Game not found in IGDB or mock data');
+      throw new Error('Game not found in GameSpot or mock data');
     } finally {
       setLoading(false);
     }
