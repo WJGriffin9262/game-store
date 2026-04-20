@@ -109,8 +109,10 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Try to fetch from RAWG API first
+      // Fetch from RAWG API - this is the primary source
+      console.log('📡 Fetching games from RAWG API...');
       const data = await fetchPopularGames(page, pageSize);
+      console.log(`✅ Successfully loaded ${data.results.length} real games from RAWG`);
       setGames(data.results);
       setPagination({
         count: data.count,
@@ -118,15 +120,15 @@ export function GameProvider({ children }) {
         previous: data.previous,
       });
     } catch (err) {
-      console.warn('RAWG API failed, falling back to mock data:', err.message);
-      // Fallback to mock data
+      console.warn('⚠️ RAWG API failed, falling back to mock data:', err.message);
+      // Only fallback to mock data if RAWG API truly fails
       setGames(mockGames);
       setPagination({
         count: mockGames.length,
         next: null,
         previous: null,
       });
-      // Don't set error for mock data fallback
+      // Don't set error - use mock data silently as backup
     } finally {
       setLoading(false);
     }
@@ -141,8 +143,10 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Try to search via RAWG API first
+      // Search via RAWG API - primary source
+      console.log(`🔍 Searching RAWG API for: "${query}"`);
       const data = await searchGamesAPI(query, 20);
+      console.log(`✅ Found ${data.length} real games from RAWG matching "${query}"`);
       setGames(data);
       setPagination({
         count: data.length,
@@ -150,7 +154,7 @@ export function GameProvider({ children }) {
         previous: null,
       });
     } catch (err) {
-      console.warn('RAWG API search failed, falling back to mock data search:', err.message);
+      console.warn(`⚠️ RAWG API search failed, searching mock data:`, err.message);
       // Fallback to mock data search
       const filteredGames = mockGames.filter(game =>
         game.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -173,17 +177,20 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Try to fetch from RAWG API first
+      // Fetch from RAWG API - primary source
+      console.log(`📡 Fetching game details from RAWG API (ID: ${gameId})`);
       const data = await fetchGameByIdAPI(gameId);
+      console.log(`✅ Successfully loaded real game data from RAWG: ${data.title}`);
       return data;
     } catch (err) {
-      console.warn('RAWG API fetch failed, falling back to mock data:', err.message);
+      console.warn(`⚠️ RAWG API fetch failed, looking in mock data (ID: ${gameId}):`, err.message);
       // Fallback to mock data
       const game = mockGames.find(g => g.id === parseInt(gameId));
       if (game) {
+        console.log(`✅ Found mock game: ${game.title}`);
         return game;
       }
-      throw new Error('Game not found');
+      throw new Error('Game not found in RAWG or mock data');
     } finally {
       setLoading(false);
     }
