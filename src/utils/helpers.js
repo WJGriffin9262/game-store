@@ -1,60 +1,38 @@
+/** Branding and small formatting helpers shared across the app. */
+export const APP_NAME = 'Gaming Odyssey';
+export const SUPPORT_EMAIL = 'support@gamingodyssey.com';
+
+/** Inline SVG so images never 404 when the API omits art or CDN fails (no public/ file needed). */
+export const PLACEHOLDER_GAME_IMAGE = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450"><rect fill="#1e293b" width="800" height="450"/><path fill="#334155" d="M120 280 L320 120 L520 300 L680 160 L680 330 L120 330 Z"/><circle fill="#475569" cx="620" cy="110" r="36"/><text x="400" y="400" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="22">No cover image</text></svg>',
+)}`;
+
 /**
- * Format price as currency
- * @param {number} price - Price value
- * @param {string} currency - Currency code (default: USD)
- * @returns {string} Formatted price
+ * Use when an img fails to load: swap once to placeholder and stop the error loop.
  */
-export const formatPrice = (price, currency = 'USD') => {
+export function handleGameImageError(event) {
+  const el = event.currentTarget;
+  el.onerror = null;
+  el.src = PLACEHOLDER_GAME_IMAGE;
+}
+
+export function formatPrice(price, currency = 'USD') {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
   }).format(price);
-};
+}
 
-/**
- * Format date string
- * @param {string} dateString - ISO date string
- * @returns {string} Formatted date
- */
-export const formatDate = (dateString) => {
+export function formatDate(dateString) {
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-};
+}
 
-/**
- * Truncate text to specific length
- * @param {string} text - Text to truncate
- * @param {number} length - Maximum length
- * @returns {string} Truncated text
- */
-export const truncateText = (text, length = 100) => {
-  if (text.length <= length) return text;
-  return text.substring(0, length) + '...';
-};
-
-/**
- * Debounce function
- * @param {Function} func - Function to debounce
- * @param {number} delay - Delay in milliseconds
- * @returns {Function} Debounced function
- */
-export const debounce = (func, delay = 300) => {
-  let timeoutId;
-  return (...args) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func(...args), delay);
-  };
-};
-
-/**
- * Validate email
- * @param {string} email - Email address
- * @returns {boolean} Is valid email
- */
-export const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
+export function truncateText(text, length = 100) {
+  const s = text == null ? '' : String(text);
+  if (s.length <= length) return s;
+  return `${s.substring(0, length)}...`;
+}

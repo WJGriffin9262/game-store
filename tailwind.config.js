@@ -6,11 +6,15 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        'neon-pink': '#FF00FF',
-        'neon-blue': '#1E90FF',
-        'neon-cyan': '#00FFFF',
-        'dark-bg': '#0f0f0f',
+        accent: {
+          DEFAULT: '#38bdf8',
+          hover: '#7dd3fc',
+          strong: '#0ea5e9',
+        },
       },
       animation: {
         'shimmer': 'shimmer 2s infinite linear',
