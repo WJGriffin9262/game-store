@@ -36,6 +36,8 @@ Copy `.env.example` to `.env` and add keys **only on your machine** (never commi
 
 Restart `npm start` after changing `.env`.
 
+**Vercel:** This app does not ship `.env` to the host. In the Vercel project, open **Settings → Environment Variables** and add the same `REACT_APP_*` names as in `.env.example` (Production, then **Redeploy**). See the “Vercel (Production)” block at the top of `.env.example`.
+
 ## Stack
 
 - React 19, React Router 7
