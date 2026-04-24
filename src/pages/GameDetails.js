@@ -1,252 +1,264 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { LoadingSpinner, ErrorMessage } from '../components';
-import { useCart, useGames } from '../hooks';
-import { formatPrice, formatDate } from '../utils';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorMessage from '../components/ErrorMessage';
+import { useCart } from '../context/CartContext';
+import { useGames } from '../context/GameContext';
+import { formatPrice, formatDate } from '../utils/helpers';
 
 function GameDetails() {
   const { id } = useParams();
   const [game, setGame] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const { addItem } = useCart();
   const { fetchGameById } = useGames();
 
   useEffect(() => {
-    const loadGame = async () => {
+    async function loadGameDetails() {
+      setIsLoading(true);
+      setLoadError('');
       try {
         const data = await fetchGameById(id);
         setGame(data);
-        setError(null);
       } catch (err) {
-        setError(err.message || 'Game not found');
+        setLoadError(err.message || 'Game not found');
         setGame(null);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
-    };
+    }
 
-    loadGame();
+    loadGameDetails();
   }, [id, fetchGameById]);
 
-  const handleAddToCart = () => {
-    if (game) {
-      addItem(game);
-      alert(`${game.title} added to cart!`);
-    }
-  };
+  function handleAddToCart() {
+    addItem(game);
+    alert(`Added "${game.title}" to cart`);
+  }
 
-  if (loading) return (
-    <div className="min-h-screen bg-gray-50">
-      <LoadingSpinner message="Loading game details..." />
+  if (isLoading) return (
+    <div className='game-details-page'>
+      <LoadingSpinner message='Loading game details...' />
     </div>
   );
 
-  if (error) return (
+  if (loadError) return (
     <ErrorMessage
-      message={`Game not found or failed to load: ${error}`}
+      message={`Game not found or failed to load: ${loadError}`}
       onRetry={() => window.location.reload()}
-      title="Game Not Available"
+      title='Game Not Available'
     />
   );
 
   if (!game) return (
     <ErrorMessage
       message="The game you're looking for doesn't exist or has been removed."
-      title="Game Not Found"
+      title='Game Not Found'
     />
   );
 
+  const platformText = game.platforms?.join(', ') || 'N/A';
+  const metacriticText = game.metacritic ? `${game.metacritic}/100` : 'N/A';
+  const playtimeText = game.playtime ? `${game.playtime}h` : 'N/A';
+  const releaseYear = game.releaseDate ? new Date(game.releaseDate).getFullYear() : 'Unknown';
+  const tags = Array.isArray(game.tags) ? game.tags.slice(0, 8) : [];
+  const minimumRequirements = [
+    `OS: ${game.platforms?.includes('PC') ? 'Windows 10' : 'Platform supported OS'}`,
+    'CPU: Quad-core 3.0 GHz',
+    'Memory: 8 GB RAM',
+    'Graphics: 4 GB VRAM',
+    'Storage: 40 GB available space',
+  ];
+  const recommendedRequirements = [
+    'CPU: 6-core 3.5 GHz',
+    'Memory: 16 GB RAM',
+    'Graphics: 8 GB VRAM',
+    'Storage: SSD with 40 GB free',
+  ];
+  const editionList = [
+    {
+      name: 'Standard Edition',
+      details: 'Base game with all current updates.',
+      price: formatPrice(game.price),
+    },
+    {
+      name: 'Deluxe Edition',
+      details: 'Base game plus soundtrack and cosmetic pack.',
+      price: formatPrice(game.price + 12),
+    },
+  ];
+
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
+    <div className='game-details-page'>
+      <section className='game-details-header'>
+        <div className='container'>
+          <div className='game-details-header-row'>
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold mb-2">Game Details</h1>
-              <p className="text-gray-300">Discover everything about this game</p>
+              <h1>Arcade Details</h1>
+              <p>Everything you need before adding this title to your lineup.</p>
             </div>
-            <Link to="/games" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors px-4 py-2 rounded-lg hover:bg-white/10">
-              ← Back to Games
-            </Link>
+            <Link to='/games' className='button-secondary'>Back to Games</Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Game Image */}
-          <div className="lg:col-span-2">
-            <div className="bg-gray-200 rounded-lg overflow-hidden mb-6">
-              <img 
-                src={game.image || '/placeholder-game.jpg'} 
+      <section className='game-details-content'>
+        <div className='container game-details-grid'>
+          <div className='game-main-panel'>
+            <div className='game-main-image'>
+              <img
+                src={game.image || '/placeholder-game.jpg'}
                 alt={game.title}
-                className="w-full h-auto object-cover"
+                className='game-cover-image'
                 onError={(e) => e.target.src = '/placeholder-game.jpg'}
               />
             </div>
 
-            {/* Description - Prominent Display */}
-            <div className="bg-white rounded-lg p-6 sm:p-8 shadow-md border-l-4 border-blue-500">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-6 text-gray-900">About This Game</h2>
-              <div className="prose prose-lg max-w-none">
-                <p className="text-gray-700 leading-relaxed text-base sm:text-lg mb-4">
-                  {game.description}
-                </p>
-                {game.description && game.description.length > 200 && (
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-blue-800 text-sm font-medium mb-2">💡 Game Highlights:</p>
-                    <ul className="text-blue-700 text-sm space-y-1">
-                      <li>• Engaging gameplay mechanics</li>
-                      <li>• Stunning visuals and sound design</li>
-                      <li>• Hours of immersive entertainment</li>
-                    </ul>
-                  </div>
-                )}
+            <div className='game-description-panel'>
+              <h2>About This Title</h2>
+              <p>{game.description || 'No description available.'}</p>
+            </div>
+
+            <div className='game-description-panel'>
+              <h2>At a Glance</h2>
+              <div className='details-facts-grid'>
+                <div className='details-fact-item'>
+                  <span className='details-fact-label'>Genre</span>
+                  <span className='details-fact-value'>{game.genre || 'Unknown'}</span>
+                </div>
+                <div className='details-fact-item'>
+                  <span className='details-fact-label'>Release Date</span>
+                  <span className='details-fact-value'>{formatDate(game.releaseDate)}</span>
+                </div>
+                <div className='details-fact-item'>
+                  <span className='details-fact-label'>Developer</span>
+                  <span className='details-fact-value'>{game.developer || 'Unknown'}</span>
+                </div>
+                <div className='details-fact-item'>
+                  <span className='details-fact-label'>Metacritic</span>
+                  <span className='details-fact-value'>{metacriticText}</span>
+                </div>
               </div>
             </div>
 
-            {/* Details Grid */}
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="bg-white rounded-lg p-4 shadow-md">
-                <p className="text-sm text-gray-600">Platforms</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {game.platforms?.slice(0, 2).join(', ') || 'N/A'}
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-md">
-                <p className="text-sm text-gray-600">Publishers</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {game.publisher || 'Unknown'}
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-md">
-                <p className="text-sm text-gray-600">Metacritic Score</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {game.metacritic ? `${game.metacritic}/100` : 'N/A'}
-                </p>
-              </div>
-              <div className="bg-white rounded-lg p-4 shadow-md">
-                <p className="text-sm text-gray-600">Playing Time</p>
-                <p className="text-lg font-semibold text-gray-900">
-                  {game.playtime ? `${game.playtime}h` : 'N/A'}
-                </p>
-              </div>
-            </div>
-
-            {/* Tags */}
-            {game.tags && game.tags.length > 0 && (
-              <div className="bg-white rounded-lg p-6 shadow-md mt-6">
-                <h3 className="text-lg font-bold mb-4">Tags</h3>
-                <div className="flex flex-wrap gap-2">
-                  {game.tags.slice(0, 10).map((tag, index) => (
-                    <span 
-                      key={index}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                    >
-                      {tag}
-                    </span>
+            {tags.length > 0 && (
+              <div className='game-description-panel'>
+                <h2>Keywords</h2>
+                <div className='tag-list'>
+                  {tags.map((tag) => (
+                    <span key={tag} className='tag-chip'>{tag}</span>
                   ))}
                 </div>
               </div>
             )}
-          </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-lg p-6 shadow-lg sticky top-24">
-              {/* Game Title */}
-              <h1 className="text-2xl sm:text-3xl font-bold mb-2 leading-tight">{game.title}</h1>
-              <p className="text-gray-300 mb-6 text-sm">{game.developer}</p>
-
-              {/* Game Image */}
-              <div className="mb-6 rounded-lg overflow-hidden">
-                <img
-                  src={game.image || '/placeholder-game.jpg'}
-                  alt={game.title}
-                  className="w-full h-48 object-cover"
-                  onError={(e) => e.target.src = '/placeholder-game.jpg'}
-                />
+            <div className='game-meta-grid'>
+              <div className='meta-card'>
+                <p className='meta-label'>Platforms</p>
+                <p>{platformText}</p>
               </div>
-
-              {/* Rating */}
-              <div className="flex items-center gap-2 mb-6">
-                <div className="flex text-yellow-400 text-xl">
-                  {'⭐'.repeat(Math.floor(game.rating || 0))}
-                  {'☆'.repeat(5 - Math.floor(game.rating || 0))}
-                </div>
-                <span className="text-lg font-semibold text-white">
-                  {game.rating ? `${game.rating}/5` : 'No rating'}
-                </span>
+              <div className='meta-card'>
+                <p className='meta-label'>Publisher</p>
+                <p>{game.publisher || 'Unknown'}</p>
               </div>
-
-              {/* Price - Prominent Display */}
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg p-4 mb-6 text-center">
-                <p className="text-white/80 text-sm mb-1 font-medium">Price</p>
-                <p className="text-4xl font-bold text-white">
-                  {formatPrice(game.price)}
-                </p>
-                <p className="text-white/90 text-xs mt-1">Mock pricing for demo</p>
+              <div className='meta-card'>
+                <p className='meta-label'>Metacritic</p>
+                <p>{metacriticText}</p>
               </div>
+              <div className='meta-card'>
+                <p className='meta-label'>Playtime</p>
+                <p>{playtimeText}</p>
+              </div>
+              <div className='meta-card'>
+                <p className='meta-label'>Release Year</p>
+                <p>{releaseYear}</p>
+              </div>
+              <div className='meta-card'>
+                <p className='meta-label'>Store Availability</p>
+                <p>Digital download</p>
+              </div>
+            </div>
 
-              {/* Key Details */}
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm">Release Date</span>
-                  <span className="text-white font-medium">
-                    {formatDate(game.releaseDate)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-300 text-sm">Genre</span>
-                  <span className="text-white font-medium">
-                    {game.genre || 'Unknown'}
-                  </span>
-                </div>
-                {game.metacritic && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300 text-sm">Metacritic</span>
-                    <span className="text-green-400 font-bold">
-                      {game.metacritic}/100
-                    </span>
+            <div className='game-description-panel mobile-hide-on-small'>
+              <h2>Editions</h2>
+              <div className='requirements-grid'>
+                {editionList.map((edition) => (
+                  <div key={edition.name} className='meta-card'>
+                    <p className='meta-label'>{edition.name}</p>
+                    <p>{edition.details}</p>
+                    <p className='edition-price'>{edition.price}</p>
                   </div>
-                )}
+                ))}
               </div>
+            </div>
 
-              {/* Add to Cart Button - Prominent */}
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-4 px-6 rounded-lg font-bold text-lg hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg mb-4"
-              >
-                🛒 Add to Cart - {formatPrice(game.price)}
-              </button>
-
-              {/* Additional Actions */}
-              <div className="space-y-3">
-                {game.website && (
-                  <a
-                    href={game.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center py-3 px-4 rounded-lg border-2 border-cyan-400 text-cyan-400 font-semibold hover:bg-cyan-400/10 transition-colors"
-                  >
-                    🌐 Official Website
-                  </a>
-                )}
-
-                <Link
-                  to="/games"
-                  className="block w-full text-center py-3 px-4 rounded-lg border-2 border-gray-400 text-gray-300 font-semibold hover:bg-gray-400/10 transition-colors"
-                >
-                  ← Back to Games
-                </Link>
+            <div className='game-description-panel mobile-hide-on-small'>
+              <h2>System Requirements</h2>
+              <div className='requirements-grid'>
+                <div className='meta-card'>
+                  <p className='meta-label'>Minimum</p>
+                  <ul className='requirements-list'>
+                    {minimumRequirements.map((requirement) => (
+                      <li key={requirement}>{requirement}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className='meta-card'>
+                  <p className='meta-label'>Recommended</p>
+                  <ul className='requirements-list'>
+                    {recommendedRequirements.map((requirement) => (
+                      <li key={requirement}>{requirement}</li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
+
+          <aside className='game-side-panel'>
+            <h2 className='game-title'>{game.title}</h2>
+            <p className='game-developer-name'>{game.developer || 'Unknown developer'}</p>
+
+            <div className='game-price-box'>
+              <p className='meta-label'>Price</p>
+              <p className='game-price-value'>{formatPrice(game.price)}</p>
+            </div>
+
+            <div className='game-side-meta'>
+              <div className='game-info-row'>
+                <span>Release Date</span>
+                <span>{formatDate(game.releaseDate)}</span>
+              </div>
+              <div className='game-info-row'>
+                <span>Genre</span>
+                <span>{game.genre || 'Unknown'}</span>
+              </div>
+              <div className='game-info-row'>
+                <span>Rating</span>
+                <span>{game.rating ? `${game.rating}/5` : 'No score yet'}</span>
+              </div>
+              <div className='game-info-row'>
+                <span>Platforms</span>
+                <span>{platformText}</span>
+              </div>
+            </div>
+
+            <button type='button' onClick={handleAddToCart} className='button-primary full-width'>
+              Add to Cart
+            </button>
+
+            {game.website && (
+              <a href={game.website} target='_blank' rel='noopener noreferrer' className='button-secondary full-width text-center'>
+                Official Website
+              </a>
+            )}
+            <div className='side-link-wrap'>
+              <Link to='/games' className='button-secondary full-width text-center'>Back to Games</Link>
+            </div>
+          </aside>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

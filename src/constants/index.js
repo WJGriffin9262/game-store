@@ -1,11 +1,9 @@
-export * from './api';
-
 // App Constants
-export const APP_NAME = 'Game Store';
+export const APP_NAME = 'Retro Arcade 77';
 export const APP_VERSION = '1.0.0';
 
 // Cart
-export const TAX_RATE = 0.1; // 10%
+export const TAX_RATE = 0.0825; // 8.25%
 
 // Sorting Options
 export const SORT_OPTIONS = [

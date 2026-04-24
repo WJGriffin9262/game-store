@@ -6,6 +6,12 @@ module.exports = {
   ],
   theme: {
     extend: {
+      colors: {
+        'neon-pink': '#FF00FF',
+        'neon-blue': '#1E90FF',
+        'neon-cyan': '#00FFFF',
+        'dark-bg': '#0f0f0f',
+      },
       animation: {
         'shimmer': 'shimmer 2s infinite linear',
       },

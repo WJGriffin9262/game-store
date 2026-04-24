@@ -1,9 +1,0 @@
-export { default as Header } from './Header';
-export { default as Footer } from './Footer';
-export { default as GameCard } from './GameCard';
-export { default as GameCardSkeleton } from './GameCardSkeleton';
-export { default as GameCardSkeletonAdvanced } from './GameCardSkeletonAdvanced';
-export { default as GameGridSkeleton } from './GameGridSkeleton';
-export { default as SkeletonDemo } from './SkeletonDemo';
-export { default as LoadingSpinner } from './LoadingSpinner';
-export { default as ErrorMessage } from './ErrorMessage';

@@ -1,8 +1,15 @@
-import { render, screen } from '@testing-library/react';
-import App from './App';
+import { formatDate, formatPrice, truncateText } from './utils/helpers';
 
-test('renders learn react link', () => {
-  render(<App />);
-  const linkElement = screen.getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+describe('helpers', () => {
+  test('formatPrice returns USD currency string', () => {
+    expect(formatPrice(19.99)).toBe('$19.99');
+  });
+
+  test('truncateText shortens long text', () => {
+    expect(truncateText('abcdefghijklmnopqrstuvwxyz', 10)).toBe('abcdefghij...');
+  });
+
+  test('formatDate returns readable month/day/year', () => {
+    expect(formatDate('2024-01-15')).toContain('2024');
+  });
 });

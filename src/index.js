@@ -5,7 +5,6 @@ import './index.css';
 import App from './App';
 import { GameProvider } from './context/GameContext';
 import { CartProvider } from './context/CartContext';
-import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -19,5 +18,3 @@ root.render(
     </Router>
   </React.StrictMode>
 );
-
-reportWebVitals();

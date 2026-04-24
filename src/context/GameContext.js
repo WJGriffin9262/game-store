@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback } from 'react';
+import { createContext, useState, useCallback, useContext } from 'react';
 import { gamespotService } from '../services/gamespotService';
 
 // Mock data fallback
@@ -51,7 +51,7 @@ const mockGames = [
     price: 39.99,
     genre: 'Racing',
     developer: 'Speed Demons',
-    rating: 4.6,
+    rating: 4.5,
     description: 'Feel the adrenaline rush as you race through stunning tracks around the world. Customize your cars, compete in tournaments, and become the ultimate racing champion.',
     releaseDate: '2024-04-05',
     image: 'https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=400',
@@ -65,7 +65,7 @@ const mockGames = [
     price: 34.99,
     genre: 'Adventure',
     developer: 'Cosmic Games',
-    rating: 4.4,
+    rating: 4.5,
     description: 'Embark on an epic space journey across the galaxy. Discover new planets, encounter alien civilizations, and make choices that shape the future of humanity.',
     releaseDate: '2024-05-12',
     image: 'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400',
@@ -79,7 +79,7 @@ const mockGames = [
     price: 19.99,
     genre: 'Fighting',
     developer: 'Combat Studios',
-    rating: 4.7,
+    rating: 4.5,
     description: 'Master various fighting styles and compete in intense battles. Choose from dozens of unique characters, each with their own special moves and abilities.',
     releaseDate: '2024-06-18',
     image: 'https://images.unsplash.com/photo-1556438064-2d7646166914?w=400',
@@ -105,11 +105,8 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Fetch from GameSpot API - this is the primary source
-      console.log('📡 Fetching games from GameSpot API...');
       const offset = (page - 1) * pageSize;
       const data = await gamespotService.fetchPopularGames(offset, pageSize);
-      console.log(`✅ Successfully loaded ${data.length} real games from GameSpot`);
       setGames(data);
       setPagination({
         count: data.length,
@@ -117,15 +114,12 @@ export function GameProvider({ children }) {
         previous: page > 1 ? page - 1 : null,
       });
     } catch (err) {
-      console.warn('⚠️ GameSpot API failed, falling back to mock data:', err.message);
-      // Only fallback to mock data if GameSpot API truly fails
       setGames(mockGames);
       setPagination({
         count: mockGames.length,
         next: null,
         previous: null,
       });
-      // Don't set error - use mock data silently as backup
     } finally {
       setLoading(false);
     }
@@ -140,24 +134,20 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Search via GameSpot API - primary source
-      console.log(`🔍 Searching GameSpot API for: "${query}"`);
       const data = await gamespotService.searchGames(query, 20);
-      console.log(`✅ Found ${data.length} real games from GameSpot matching "${query}"`);
       setGames(data);
       setPagination({
         count: data.length,
-        next: null,
+        next: data.length === 20 ? 2 : null,
         previous: null,
       });
     } catch (err) {
-      console.warn(`⚠️ GameSpot API search failed, searching mock data:`, err.message);
-      // Fallback to mock data search
-      const filteredGames = mockGames.filter(game =>
-        game.title.toLowerCase().includes(query.toLowerCase()) ||
-        game.description.toLowerCase().includes(query.toLowerCase()) ||
-        game.genre.toLowerCase().includes(query.toLowerCase()) ||
-        game.developer.toLowerCase().includes(query.toLowerCase())
+      const normalizedQuery = query.toLowerCase();
+      const filteredGames = mockGames.filter((game) =>
+        game.title.toLowerCase().includes(normalizedQuery) ||
+        game.description.toLowerCase().includes(normalizedQuery) ||
+        game.genre.toLowerCase().includes(normalizedQuery) ||
+        game.developer.toLowerCase().includes(normalizedQuery)
       );
       setGames(filteredGames);
       setPagination({
@@ -174,17 +164,11 @@ export function GameProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      // Fetch from GameSpot API - primary source
-      console.log(`📡 Fetching game details from GameSpot API (ID: ${gameId})`);
       const data = await gamespotService.fetchGameById(gameId);
-      console.log(`✅ Successfully loaded real game data from GameSpot: ${data.title}`);
       return data;
     } catch (err) {
-      console.warn(`⚠️ GameSpot API fetch failed, looking in mock data (ID: ${gameId}):`, err.message);
-      // Fallback to mock data
-      const game = mockGames.find(g => g.id === parseInt(gameId));
+      const game = mockGames.find((item) => item.id === Number.parseInt(gameId, 10));
       if (game) {
-        console.log(`✅ Found mock game: ${game.title}`);
         return game;
       }
       throw new Error('Game not found in GameSpot or mock data');
@@ -204,4 +188,14 @@ export function GameProvider({ children }) {
   };
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
+}
+
+export function useGames() {
+  const context = useContext(GameContext);
+
+  if (!context) {
+    throw new Error('useGames must be used within a GameProvider');
+  }
+
+  return context;
 }

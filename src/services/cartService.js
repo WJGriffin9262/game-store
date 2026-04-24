@@ -1,3 +1,5 @@
+import { TAX_RATE } from '../constants';
+
 const CART_STORAGE_KEY = 'gamestore_cart';
 
 /**
@@ -68,7 +70,7 @@ export const clearCart = () => {
  * @param {Array} cart - Cart items
  * @returns {Object} Subtotal, tax, total
  */
-export const calculateTotal = (cart, taxRate = 0.1) => {
+export const calculateTotal = (cart, taxRate = TAX_RATE) => {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
