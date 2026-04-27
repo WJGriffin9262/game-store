@@ -789,6 +789,7 @@ export const steamService = {
 
 const RAWG_ROUTE_PREFIX = 'r';
 const GAMESPOT_ROUTE_PREFIX = 'g';
+const STEAM_ROUTE_PREFIX = 's';
 
 function withRawgRouteIds(games) {
   return games.map((g) => ({ ...g, id: `${RAWG_ROUTE_PREFIX}${g.id}` }));
@@ -804,6 +805,14 @@ function withRawgRouteId(game) {
 
 function withGamespotRouteId(game) {
   return { ...game, id: `${GAMESPOT_ROUTE_PREFIX}${game.id}` };
+}
+
+function withSteamRouteIds(games) {
+  return games.map((g) => ({ ...g, id: `${STEAM_ROUTE_PREFIX}${g.id}` }));
+}
+
+function withSteamRouteId(game) {
+  return { ...game, id: `${STEAM_ROUTE_PREFIX}${game.id}` };
 }
 
 function dedupeGamesByTitle(firstList, secondList, limit) {
@@ -893,12 +902,83 @@ export const hybridRawgGameSpotService = {
   },
 };
 
+/** Both keys: combined catalog, deduped by title — ids prefixed `r` (RAWG) and `s` (Steam). */
+export const hybridSteamRawgService = {
+  fetchPopularGames: async (offset = 0, limit = 20) => {
+    const half = Math.max(Math.ceil(limit / 2), 5);
+    const rawgOffset = (Math.floor(offset / limit) || 0) * half;
+    const [rawgRows, steamRows] = await Promise.all([
+      rawgService.fetchPopularGames(rawgOffset, half).catch(() => []),
+      steamService.fetchPopularGames(offset, half).catch(() => []),
+    ]);
+    return dedupeGamesByTitle(
+      withRawgRouteIds(rawgRows),
+      withSteamRouteIds(steamRows),
+      limit,
+    );
+  },
+
+  searchGames: async (query, limit = 20) => {
+    const half = Math.max(Math.ceil(limit / 2), 5);
+    const [rawgRows, steamRows] = await Promise.all([
+      rawgService.searchGames(query, half).catch(() => []),
+      steamService.searchGames(query, half).catch(() => []),
+    ]);
+    return dedupeGamesByTitle(
+      withRawgRouteIds(rawgRows),
+      withSteamRouteIds(steamRows),
+      limit,
+    );
+  },
+
+  fetchGameById: async (routeId) => {
+    const s = String(routeId);
+    if (s.startsWith(RAWG_ROUTE_PREFIX)) {
+      const inner = s.slice(RAWG_ROUTE_PREFIX.length);
+      const game = await rawgService.fetchGameById(inner);
+      return withRawgRouteId(game);
+    }
+    if (s.startsWith(STEAM_ROUTE_PREFIX)) {
+      const inner = s.slice(STEAM_ROUTE_PREFIX.length);
+      const game = await steamService.fetchGameById(inner);
+      return withSteamRouteId(game);
+    }
+    if (shouldUseRawg()) {
+      try {
+        const game = await rawgService.fetchGameById(s);
+        return withRawgRouteId(game);
+      } catch {
+        /* try Steam by numeric id */
+      }
+    }
+    if (shouldUseSteam() && /^\d+$/.test(s)) {
+      const game = await steamService.fetchGameById(s);
+      return withSteamRouteId(game);
+    }
+    throw new Error('Game not found');
+  },
+
+  fetchGamesByGenre: async (genreName, limit = 20) => {
+    if (shouldUseGameSpot()) {
+      return gamespotService.fetchGamesByGenre(genreName, limit);
+    }
+    return [];
+  },
+
+  fetchGameReviews: async () => [],
+
+  fetchGameImages: async () => [],
+};
+
 function resolveGamesService() {
   if (preferSteamCatalog() && shouldUseSteam()) {
     return steamService;
   }
   if (shouldUseRawg() && shouldUseGameSpot()) {
     return hybridRawgGameSpotService;
+  }
+  if (shouldUseRawg() && shouldUseSteam()) {
+    return hybridSteamRawgService;
   }
   if (shouldUseRawg()) {
     return rawgService;
