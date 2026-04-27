@@ -608,13 +608,14 @@ export function preferSteamCatalog() {
 }
 
 function steamStoreBase() {
-  const custom = process.env.REACT_APP_STEAM_STORE_PROXY;
+  const custom = (process.env.REACT_APP_STEAM_STORE_PROXY || '').trim();
   if (custom) {
     return custom.replace(/\/$/, '');
   }
   if (process.env.NODE_ENV === 'development') {
     return '/api/steam-store';
   }
+  // Production without REACT_APP_STEAM_STORE_PROXY: direct store origin (may hit CORS in the browser).
   return 'https://store.steampowered.com';
 }
 

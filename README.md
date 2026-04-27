@@ -38,6 +38,8 @@ Restart `npm start` after changing `.env`.
 
 **Vercel:** This app does not ship `.env` to the host. In the Vercel project, open **Settings → Environment Variables** and add the same `REACT_APP_*` names as in `.env.example` (Production, then **Redeploy**). See the “Vercel (Production)” block at the top of `.env.example`.
 
+**Steam on Vercel:** Add `REACT_APP_STEAM_WEB_API_KEY`. Add `REACT_APP_STEAM_STORE_PROXY` with value **`/api/steam-store`** so catalog requests use the edge rewrite in `vercel.json` (same idea as `setupProxy.js` in dev). Optionally set `REACT_APP_PREFER_STEAM=true` if you want Steam to win over RAWG when both keys exist.
+
 ## Stack
 
 - React 19, React Router 7
