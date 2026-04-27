@@ -1,6 +1,6 @@
 # Gaming Odyssey
 
-A React game storefront: browse a catalog, open game details, and manage a cart with local persistence. Supports multiple optional data sources (RAWG, Steam Store, GameSpot, IGDB) behind one `gamesService` layer.
+A React game storefront: browse a Steam-backed catalog, open game details, and manage a cart with local persistence. Catalog data comes from the Steam Store API via `src/gamesApi.js`.
 
 ## Requirements
 
@@ -23,22 +23,16 @@ npm run build                 # production bundle in /build
 
 ## Configuration
 
-Copy `.env.example` to `.env` and add keys **only on your machine** (never commit `.env`).
+Copy `.env.example` to `.env` and add your Steam Web API key **only on your machine** (never commit `.env`).
 
 | Variable | Role |
 |----------|------|
-| `REACT_APP_RAWG_API_KEY` | [RAWG](https://rawg.io/apidocs) catalog (browser-friendly). |
-| `REACT_APP_STEAM_WEB_API_KEY` | Enables Steam path; store data loads via Store API (see `.env.example` for `PREFER_STEAM` / proxy). |
-| `REACT_APP_GAMESPOT_API_KEY` | GameSpot JSONP; merges with RAWG when both set. |
-| `REACT_APP_USE_IGDB` + `TWITCH_*` | IGDB via dev proxy in `src/setupProxy.js`. |
-
-**Provider priority** (see `src/gamesApi.js` `resolveGamesService`): `REACT_APP_PREFER_STEAM=true` forces Steam-only when a Steam key is set. Otherwise: RAWG + GameSpot hybrid when both exist; else **RAWG + Steam** hybrid when both exist; else RAWG, then Steam, then IGDB, then GameSpot alone. If you have all three API keys, RAWG+GameSpot wins—remove the GameSpot key if you want the RAWG+Steam blend.
+| `REACT_APP_STEAM_WEB_API_KEY` | Required for the catalog. Enables the Steam integration (see `.env.example` for optional alias names and the store proxy). |
+| `REACT_APP_STEAM_STORE_PROXY` | Set to **`/api/steam-store`** on Vercel so requests use the rewrite in `vercel.json` (same as `setupProxy.js` in dev). |
 
 Restart `npm start` after changing `.env`.
 
-**Vercel:** This app does not ship `.env` to the host. In the Vercel project, open **Settings → Environment Variables** and add the same `REACT_APP_*` names as in `.env.example` (Production, then **Redeploy**). See the “Vercel (Production)” block at the top of `.env.example`.
-
-**Steam on Vercel:** Add `REACT_APP_STEAM_WEB_API_KEY`. Add `REACT_APP_STEAM_STORE_PROXY` with value **`/api/steam-store`** so catalog requests use the edge rewrite in `vercel.json` (same idea as `setupProxy.js` in dev). With **RAWG + Steam** and *no* `REACT_APP_PREFER_STEAM`, the app merges both catalogs. Set `REACT_APP_PREFER_STEAM=true` only if you want **Steam-only** (no RAWG merge).
+**Vercel:** This app does not ship `.env` to the host. In the Vercel project, open **Settings → Environment Variables** and add the same names as in `.env.example` for **Production** (and Preview if needed), then **Redeploy**.
 
 ## Stack
 
@@ -58,8 +52,8 @@ Restart `npm start` after changing `.env`.
 - `src/utils/` — formatting and small helpers
 - `src/styles/` — global CSS
 - `src/context/AppContext.jsx` — app-wide state
-- `src/gamesApi.js` — API adapters and `gamesService`
-- `src/setupProxy.js` — dev-only proxies (IGDB, Steam Store) to avoid CORS
+- `src/gamesApi.js` — Steam Store adapter and `gamesService`
+- `src/setupProxy.js` — dev-only proxy for Steam Store (CORS)
 
 ## License / coursework
 
