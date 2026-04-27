@@ -596,10 +596,85 @@ export const igdbService = {
 };
 
 // ——— Steam — Web API key in .env enables this provider. Catalog data comes from the public Store
-// API (details + search); dev proxy: /api/steam-store → store.steampowered.com
+// API (details + search; no key is sent to Store endpoints). Dev proxy: /api/steam-store → store.steampowered.com
+//
+// Env resolution (first non-empty wins). Create React App only inlines REACT_APP_* at build time;
+// NEXT_PUBLIC_STEAM_API_KEY works on Next.js / Vite; STEAM_API_KEY is listed for dashboards that
+// use that name — you must duplicate it as REACT_APP_STEAM_WEB_API_KEY on Vercel for CRA builds.
+
+const STEAM_KEY_ENV_NAMES = [
+  'REACT_APP_STEAM_WEB_API_KEY',
+  'NEXT_PUBLIC_STEAM_API_KEY',
+  'STEAM_API_KEY',
+];
+
+let steamKeyEnvCache;
+
+function readSteamWebApiKeyFromEnv() {
+  if (steamKeyEnvCache) return steamKeyEnvCache;
+  for (const name of STEAM_KEY_ENV_NAMES) {
+    const raw = process.env[name];
+    const value = (raw != null ? String(raw) : '').trim();
+    if (value) {
+      steamKeyEnvCache = { value, source: name };
+      return steamKeyEnvCache;
+    }
+  }
+  steamKeyEnvCache = { value: '', source: null };
+  return steamKeyEnvCache;
+}
+
+/** Resolved Steam Web API key (trimmed), or empty string if unset. */
+export function steamWebApiKey() {
+  return readSteamWebApiKeyFromEnv().value;
+}
+
+/** Which env var supplied the key, or null — for diagnostics only. */
+export function steamWebApiKeySource() {
+  return readSteamWebApiKeyFromEnv().source;
+}
+
+let steamEnvDiagnosticsLogged = false;
+
+function logSteamEnvDiagnostics() {
+  if (steamEnvDiagnosticsLogged) return;
+  steamEnvDiagnosticsLogged = true;
+
+  const { value, source } = readSteamWebApiKeyFromEnv();
+  const preferOnlySteam = process.env.REACT_APP_PREFER_STEAM === 'true';
+  const steamProxySet = (process.env.REACT_APP_STEAM_STORE_PROXY || '').trim().length > 0;
+
+  // TODO(remove): temporary — confirm key is embedded at build time without printing the secret.
+  if (value) {
+    console.info(
+      `[gamesApi] Steam Web API key: loaded (length ${value.length}, source env: ${source})`,
+    );
+  } else {
+    const tried = STEAM_KEY_ENV_NAMES.join(', ');
+    console.warn(
+      `[gamesApi] Steam Web API key: missing (checked: ${tried}). ` +
+        'Steam catalog is disabled; the app will use other providers (e.g. RAWG, GameSpot) if configured. ' +
+        'On Vercel, add REACT_APP_STEAM_WEB_API_KEY for Production and redeploy so the bundle is rebuilt.',
+    );
+  }
+
+  if (steamProxySet && !value) {
+    console.warn(
+      '[gamesApi] REACT_APP_STEAM_STORE_PROXY is set but no Steam Web API key was found; ' +
+        'the proxy path is unused until a key is configured.',
+    );
+  }
+
+  if (preferOnlySteam && !value) {
+    console.error(
+      '[gamesApi] REACT_APP_PREFER_STEAM=true but no Steam API key was found. ' +
+        'Steam-only mode cannot run; fix environment variables or turn off REACT_APP_PREFER_STEAM.',
+    );
+  }
+}
 
 export function shouldUseSteam() {
-  return (process.env.REACT_APP_STEAM_WEB_API_KEY || '').trim().length > 0;
+  return steamWebApiKey().length > 0;
 }
 
 /** When true with a Steam key, Steam catalog wins over RAWG (hybrid Rawg+GameSpot still wins). */
@@ -974,6 +1049,12 @@ function resolveGamesService() {
   if (preferSteamCatalog() && shouldUseSteam()) {
     return steamService;
   }
+  if (preferSteamCatalog() && !shouldUseSteam()) {
+    console.warn(
+      '[gamesApi] Catalog: REACT_APP_PREFER_STEAM is true but no Steam API key is available; ' +
+        'continuing with RAWG, GameSpot, or IGDB instead of Steam-only mode.',
+    );
+  }
   if (shouldUseRawg() && shouldUseGameSpot()) {
     return hybridRawgGameSpotService;
   }
@@ -993,5 +1074,7 @@ function resolveGamesService() {
 }
 
 export const gamesService = resolveGamesService();
+
+logSteamEnvDiagnostics();
 
 export default gamesService;
