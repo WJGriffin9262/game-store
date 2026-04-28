@@ -27,7 +27,8 @@ Copy `.env.example` to `.env` and add your Steam Web API key **only on your mach
 
 | Variable | Role |
 |----------|------|
-| `REACT_APP_STEAM_WEB_API_KEY` or `REACT_APP_STEAM_API_KEY` | Required for the catalog in this CRA app (inlined at build time). `NEXT_PUBLIC_STEAM_API_KEY` is also read first for compatibility with other bundlers; react-scripts does not inject `NEXT_PUBLIC_*` unless you customize webpack. |
+| `STEAM_API_KEY` | **Preferred:** server-only (dev `setupProxy.js` + Vercel `api/catalog-status.js` / `api/steam-web.js`). Not inlined into the CRA bundle; enables catalog via `GET /api/catalog-status` and Steam Web calls via `/api/steam-web`. |
+| `REACT_APP_STEAM_WEB_API_KEY` or `REACT_APP_STEAM_API_KEY` | Optional client-bundle gate (inlined at build time). `NEXT_PUBLIC_STEAM_API_KEY` is checked first for parity; react-scripts does not inject `NEXT_PUBLIC_*` unless you customize webpack. |
 | `REACT_APP_STEAM_STORE_PROXY` | Set to **`/api/steam-store`** on Vercel so requests use the rewrite in `vercel.json` (same as `setupProxy.js` in dev). |
 
 Restart `npm start` after changing `.env`.

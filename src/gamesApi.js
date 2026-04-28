@@ -26,6 +26,7 @@ function readSteamCatalogCredentialPresenceFromEnv() {
 let steamEnvDiagnosticsLogged = false;
 
 function logSteamEnvDiagnostics() {
+  if (process.env.NODE_ENV !== 'development') return;
   if (steamEnvDiagnosticsLogged) return;
   steamEnvDiagnosticsLogged = true;
 
