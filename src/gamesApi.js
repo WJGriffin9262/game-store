@@ -36,10 +36,9 @@ function logSteamEnvDiagnostics() {
 
   if (!configured) {
     const tried = STEAM_CATALOG_CREDENTIAL_ENV_NAMES.join(', ');
-    console.warn(
-      `[gamesApi] Steam catalog disabled — no credential in env (checked: ${tried}). ` +
-        'For Create React App on Vercel, set REACT_APP_STEAM_WEB_API_KEY or REACT_APP_STEAM_API_KEY ' +
-        'for Production and redeploy. NEXT_PUBLIC_STEAM_API_KEY is only inlined if your bundler supports it.',
+    console.info(
+      `[gamesApi] No Steam key in the client bundle (checked: ${tried}). ` +
+        'Using STEAM_API_KEY in .env instead? Catalog is gated by GET /api/catalog-status (server reads that name).',
     );
   }
 
@@ -236,20 +235,85 @@ const steamCatalogDisabledService = {
   fetchPopularGames: async () => [],
   fetchGameById: async () => {
     throw new Error(
-      'Steam catalog is not configured. Set NEXT_PUBLIC_STEAM_API_KEY, REACT_APP_STEAM_WEB_API_KEY, ' +
-        'or REACT_APP_STEAM_API_KEY in .env (for CRA use a REACT_APP_* name), restart the dev server, ' +
-        'and on Vercel set the same for Production then redeploy.',
+      'Steam catalog is not configured. Prefer server-only STEAM_API_KEY (see catalogStatusEnv.js and /api/catalog-status); ' +
+        'or set REACT_APP_STEAM_WEB_API_KEY / REACT_APP_STEAM_API_KEY for CRA (inlined in the bundle). Restart the dev server; on Vercel redeploy.',
     );
   },
 };
 
-function resolveGamesService() {
+/**
+ * CRA only inlines REACT_APP_* into the bundle, so STEAM_API_KEY alone is wired via GET /api/catalog-status
+ * (setupProxy.js in dev, api/catalog-status.js on Vercel).
+ */
+async function resolveGamesServiceAsync() {
+  if (typeof fetch !== 'undefined') {
+    try {
+      const r = await fetch('/api/catalog-status', { credentials: 'same-origin' });
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.enabled === true) {
+          return steamService;
+        }
+      }
+    } catch {
+      // offline, tests, or static hosts with no API route — fall through to bundle env gate
+    }
+  }
   if (readSteamCatalogCredentialPresenceFromEnv()) {
     return steamService;
   }
   return steamCatalogDisabledService;
 }
 
-export const gamesService = resolveGamesService();
+let resolvedGamesServicePromise;
+
+function getResolvedGamesService() {
+  if (resolvedGamesServicePromise == null) {
+    resolvedGamesServicePromise = resolveGamesServiceAsync();
+  }
+  return resolvedGamesServicePromise;
+}
+
+export const gamesService = {
+  fetchPopularGames: async (offset = 0, limit = 20) => {
+    const svc = await getResolvedGamesService();
+    return svc.fetchPopularGames(offset, limit);
+  },
+  fetchGameById: async (id) => {
+    const svc = await getResolvedGamesService();
+    return svc.fetchGameById(id);
+  },
+};
+
+/** Steam Web API via same-origin /api/steam-web proxy (API key injected on the server). */
+export async function fetchSteamWebApi(pathSegment, params = {}) {
+  const qs = new URLSearchParams();
+  qs.set('path', pathSegment);
+  Object.entries(params).forEach(([k, v]) => {
+    if (v == null || k === 'path' || k === 'key') return;
+    qs.set(k, String(v));
+  });
+  const { data, status } = await axios.get(`/api/steam-web?${qs.toString()}`, {
+    validateStatus: () => true,
+  });
+  if (status >= 400) {
+    const msg =
+      data != null &&
+      typeof data === 'object' &&
+      typeof data.error === 'string'
+        ? data.error
+        : `Steam Web API proxy error (${status})`;
+    throw new Error(msg);
+  }
+  return data;
+}
+
+export async function fetchSteamGameNews(appId) {
+  return fetchSteamWebApi('ISteamNews/GetNewsForApp/v2', {
+    appid: String(appId),
+    count: '3',
+    maxlength: '220',
+  });
+}
 
 logSteamEnvDiagnostics();

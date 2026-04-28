@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, ShoppingCart } from 'lucide-react';
 import ErrorDisplay from '../components/ErrorDisplay';
@@ -13,11 +14,44 @@ import {
   handleGameImageError,
 } from '../utils/helpers';
 import { useGameDetails } from '../hooks/useGameDetails';
+import { fetchSteamGameNews } from '../gamesApi';
 
 export default function GameDetails() {
   const { id } = useParams();
   const { addItem, fetchGameById, showToast } = useApp();
   const { game, isLoading, loadError } = useGameDetails(id, fetchGameById);
+
+  const [steamNewsItems, setSteamNewsItems] = useState([]);
+
+  useEffect(() => {
+    if (!game?.id) {
+      setSteamNewsItems([]);
+      return undefined;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchSteamGameNews(game.id);
+        const rows = data?.appnews?.newsitems;
+        if (!Array.isArray(rows) || cancelled) return;
+        setSteamNewsItems(
+          rows.slice(0, 3).map((n) => ({
+            heading: String(n.title || n.feedlabel || '')
+              .replace(/<[^>]+>/g, ' ')
+              .replace(/\[[^\]]*\]/g, ' ')
+              .replace(/\s+/g, ' ')
+              .trim(),
+            url: typeof n.url === 'string' ? n.url : null,
+          })),
+        );
+      } catch {
+        if (!cancelled) setSteamNewsItems([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [game?.id]);
 
   function handleAddToCart() {
     addItem(game);
@@ -154,6 +188,25 @@ export default function GameDetails() {
                     </span>
                   ))}
                 </div>
+              </section>
+            ) : null}
+
+            {steamNewsItems.length > 0 ? (
+              <section className='details-page__block' aria-label='Steam news'>
+                <h2>News from Steam</h2>
+                <ul className='details-page__news-list'>
+                  {steamNewsItems.map((item, idx) => (
+                    <li key={`steam-news-${game.id}-${idx}`} className='details-page__news-item'>
+                      {item.url ? (
+                        <a href={item.url} target='_blank' rel='noopener noreferrer'>
+                          {item.heading}
+                        </a>
+                      ) : (
+                        item.heading
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </section>
             ) : null}
 
