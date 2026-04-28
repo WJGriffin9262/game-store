@@ -1,5 +1,5 @@
 import { AlertTriangle, House, Mail, RotateCcw } from 'lucide-react';
-import { SUPPORT_EMAIL } from '../utils/helpers';
+import { SUPPORT_EMAIL } from '../../utils/helpers';
 import Button from './Button';
 
 export default function ErrorDisplay({ message, onRetry, title = 'Something went wrong' }) {

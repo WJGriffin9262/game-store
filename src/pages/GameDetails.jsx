@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, ShoppingCart } from 'lucide-react';
-import ErrorDisplay from '../components/ErrorDisplay';
-import LayoutContainer from '../components/LayoutContainer';
-import LoadingSpinner from '../components/LoadingSpinner';
-import Button from '../components/Button';
-import ButtonLink from '../components/ButtonLink';
+import ErrorDisplay from '../components/ui/ErrorDisplay';
+import LayoutContainer from '../components/layout/LayoutContainer';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import Button from '../components/ui/Button';
+import ButtonLink from '../components/ui/ButtonLink';
 import { useApp } from '../context/AppContext';
 import {
   formatPrice,
@@ -14,7 +14,15 @@ import {
   handleGameImageError,
 } from '../utils/helpers';
 import { useGameDetails } from '../hooks/useGameDetails';
-import { fetchSteamGameNews } from '../gamesApi';
+import { fetchSteamGameNews } from '../services/gamesApi';
+
+function normalizeSteamNewsHeading(raw) {
+  return String(raw ?? '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\[[^\]]*\]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export default function GameDetails() {
   const { id } = useParams();
@@ -26,7 +34,7 @@ export default function GameDetails() {
   useEffect(() => {
     if (!game?.id) {
       setSteamNewsItems([]);
-      return undefined;
+      return;
     }
     let cancelled = false;
     (async () => {
@@ -36,11 +44,7 @@ export default function GameDetails() {
         if (!Array.isArray(rows) || cancelled) return;
         setSteamNewsItems(
           rows.slice(0, 3).map((n) => ({
-            heading: String(n.title || n.feedlabel || '')
-              .replace(/<[^>]+>/g, ' ')
-              .replace(/\[[^\]]*\]/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim(),
+            heading: normalizeSteamNewsHeading(n.title || n.feedlabel || ''),
             url: typeof n.url === 'string' ? n.url : null,
           })),
         );

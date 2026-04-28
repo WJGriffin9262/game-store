@@ -2,12 +2,13 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Gamepad2, House, Menu, Moon, ShoppingCart, Store, Sun, X } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import { APP_NAME } from '../utils/helpers';
+import { useApp } from '../../context/AppContext';
+import { APP_NAME } from '../../utils/helpers';
 import LayoutContainer from './LayoutContainer';
 
 export default function Header() {
-  const { itemCount, theme, toggleTheme } = useApp();
+  const { cart, theme, toggleTheme } = useApp();
+  const cartCount = cart.length;
   const [menuOpen, setMenuOpen] = useState(false);
   const isDark = theme === 'dark';
 
@@ -65,7 +66,7 @@ export default function Header() {
           <Link to='/cart' className='header__mobile-nav__item' onClick={closeMenu}>
             <ShoppingCart className='header__mobile-nav__item-icon' aria-hidden />
             <span>Cart</span>
-            {itemCount > 0 ? <span className='header__badge header__mobile-nav__badge'>{itemCount}</span> : null}
+            {cartCount > 0 ? <span className='header__badge header__mobile-nav__badge'>{cartCount}</span> : null}
           </Link>
         </nav>
       </div>,
@@ -125,7 +126,7 @@ export default function Header() {
                   <Link to='/cart' className='header__link' onClick={closeMenu}>
                     <ShoppingCart className='icon' aria-hidden />
                     Cart
-                    {itemCount > 0 ? <span className='header__badge'>{itemCount}</span> : null}
+                    {cartCount > 0 ? <span className='header__badge'>{cartCount}</span> : null}
                   </Link>
                 </li>
               </ul>

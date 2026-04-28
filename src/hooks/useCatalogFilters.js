@@ -36,11 +36,11 @@ export function useCatalogFilters(games) {
           selectedPlatform === 'all' || (game.platforms || []).includes(selectedPlatform);
         return matchesSearch && matchesGenre && matchesPlatform;
       })
-      .sort((firstGame, secondGame) => {
-        if (sortBy === 'price-low') return firstGame.price - secondGame.price;
-        if (sortBy === 'price-high') return secondGame.price - firstGame.price;
-        if (sortBy === 'rating-high') return (secondGame.rating || 0) - (firstGame.rating || 0);
-        return firstGame.title.localeCompare(secondGame.title);
+      .sort((a, b) => {
+        if (sortBy === 'price-low') return a.price - b.price;
+        if (sortBy === 'price-high') return b.price - a.price;
+        if (sortBy === 'rating-high') return (b.rating || 0) - (a.rating || 0);
+        return a.title.localeCompare(b.title);
       });
   }, [games, searchTerm, selectedGenre, selectedPlatform, sortBy]);
 

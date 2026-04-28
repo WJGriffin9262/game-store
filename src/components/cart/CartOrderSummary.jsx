@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { CreditCard, Store } from 'lucide-react';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice } from '../../utils/helpers';
 
 export default function CartOrderSummary({ cart, subtotal, tax, total }) {
   const unitCount = cart.reduce((sum, item) => sum + item.quantity, 0);

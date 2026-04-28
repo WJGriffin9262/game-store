@@ -1,4 +1,4 @@
-/* Global styles: Tailwind + app UI. Import once from App.jsx. */
+/* Global styles: Tailwind + app UI. Import once from index.js. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -88,19 +88,6 @@ html[data-theme='dark'] {
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.45);
   --shadow-card-hover: 0 12px 40px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.35);
-}
-
-/* Slow ambient background — depth without distraction */
-@keyframes arcade-bg-drift {
-  0% {
-    background-position: 0% 40%;
-  }
-  50% {
-    background-position: 100% 60%;
-  }
-  100% {
-    background-position: 0% 40%;
-  }
 }
 
 @keyframes arcade-card-enter {
@@ -789,8 +776,6 @@ html[data-theme='dark'] {
   animation-delay: 0.48s;
 }
 
-/* Legacy .container alias — prefer .layout-container in JSX */
-.container,
 .layout-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -798,7 +783,6 @@ html[data-theme='dark'] {
 }
 
 @media (min-width: 1024px) {
-  .container,
   .layout-container {
     padding: 0 5rem;
   }
@@ -2104,21 +2088,8 @@ html[data-theme='dark'] {
   opacity: 0.9;
 }
 
-/* Games Grid */
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
-}
-
 /* Responsive */
 @media (max-width: 992px) {
-  .games-grid {
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1rem;
-  }
-
   .details-page__content {
     padding: 1.25rem 0;
   }
@@ -2295,14 +2266,6 @@ html[data-theme='dark'] {
     margin-top: 1.5rem;
     padding: 1.5rem 0 1rem;
   }
-}
-
-/* Body + Tailwind utility overrides (use same tokens) */
-body {
-  margin: 0;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Tailwind utility overrides used by existing pages/components */

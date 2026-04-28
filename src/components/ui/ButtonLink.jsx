@@ -1,10 +1,9 @@
-function cx(...parts) {
-  return parts.filter(Boolean).join(' ');
-}
+import { Link } from 'react-router-dom';
+import { cx } from '../../utils/cx';
 
-export default function Button({
+export default function ButtonLink({
+  to,
   variant = 'primary',
-  type = 'button',
   className,
   icon: Icon,
   iconClassName = 'icon icon--md',
@@ -13,9 +12,9 @@ export default function Button({
 }) {
   const variantClass = variant === 'secondary' ? 'button-secondary' : 'button-primary';
   return (
-    <button type={type} className={cx(variantClass, className)} {...rest}>
+    <Link to={to} className={cx(variantClass, className)} {...rest}>
       {Icon ? <Icon className={iconClassName} aria-hidden /> : null}
       {children}
-    </button>
+    </Link>
   );
 }

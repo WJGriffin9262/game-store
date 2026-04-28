@@ -10,8 +10,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import * as cartStorage from '../cartStorage';
-import { gamesService } from '../gamesApi';
+import * as cartStorage from '../services/cartStorage';
+import { gamesService } from '../services/gamesApi';
 
 const AppContext = createContext(null);
 
@@ -271,7 +271,6 @@ export function AppProvider({ children }) {
     fetchGameById,
 
     cart,
-    itemCount: cart.length,
     subtotal,
     tax,
     total,

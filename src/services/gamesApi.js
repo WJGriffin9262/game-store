@@ -23,34 +23,6 @@ function readSteamCatalogCredentialPresenceFromEnv() {
   return steamCatalogCredentialCache;
 }
 
-let steamEnvDiagnosticsLogged = false;
-
-function logSteamEnvDiagnostics() {
-  if (process.env.NODE_ENV !== 'development') return;
-  if (steamEnvDiagnosticsLogged) return;
-  steamEnvDiagnosticsLogged = true;
-
-  const configured = readSteamCatalogCredentialPresenceFromEnv();
-  const steamProxySet = (process.env.REACT_APP_STEAM_STORE_PROXY || '').trim().length > 0;
-
-  console.info('[gamesApi] Steam catalog credential present:', configured);
-
-  if (!configured) {
-    const tried = STEAM_CATALOG_CREDENTIAL_ENV_NAMES.join(', ');
-    console.info(
-      `[gamesApi] No Steam key in the client bundle (checked: ${tried}). ` +
-        'Using STEAM_API_KEY in .env instead? Catalog is gated by GET /api/catalog-status (server reads that name).',
-    );
-  }
-
-  if (steamProxySet && !configured) {
-    console.warn(
-      '[gamesApi] REACT_APP_STEAM_STORE_PROXY is set but no Steam credential was found; ' +
-        'the proxy path is unused until a credential is configured.',
-    );
-  }
-}
-
 function steamStoreBase() {
   const custom = (process.env.REACT_APP_STEAM_STORE_PROXY || '').trim();
   if (custom) {
@@ -299,11 +271,7 @@ export async function fetchSteamWebApi(pathSegment, params = {}) {
   });
   if (status >= 400) {
     const msg =
-      data != null &&
-      typeof data === 'object' &&
-      typeof data.error === 'string'
-        ? data.error
-        : `Steam Web API proxy error (${status})`;
+      typeof data?.error === 'string' ? data.error : `Steam Web API proxy error (${status})`;
     throw new Error(msg);
   }
   return data;
@@ -316,5 +284,3 @@ export async function fetchSteamGameNews(appId) {
     maxlength: '220',
   });
 }
-
-logSteamEnvDiagnostics();

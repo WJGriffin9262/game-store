@@ -11,12 +11,12 @@ export default function PageHero({
   actions = null,
 }) {
   const textBlock = (
-    <div className='page-hero__intro'>
+    <>
       <HeadingTag id={headingId} className='page-hero__heading heading-display'>
         {title}
       </HeadingTag>
       {description ? <p className='page-hero__text'>{description}</p> : null}
-    </div>
+    </>
   );
 
   return (

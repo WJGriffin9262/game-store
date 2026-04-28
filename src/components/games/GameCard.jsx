@@ -5,13 +5,11 @@ import {
   truncateText,
   PLACEHOLDER_GAME_IMAGE,
   handleGameImageError,
-} from '../utils/helpers';
+} from '../../utils/helpers';
 
 export default function GameCard({ game, onAddToCart }) {
   function handleAddToCartClick() {
-    if (typeof onAddToCart === 'function') {
-      onAddToCart(game);
-    }
+    onAddToCart?.(game);
   }
 
   const rating = Math.floor(game.rating || 0);
