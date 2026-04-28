@@ -1,10 +1,10 @@
 import { LayoutGrid, RotateCcw } from 'lucide-react';
-import GameGrid from '../components/ui/GameGrid';
-import HomeHero from '../components/catalog/HomeHero';
-import LayoutContainer from '../components/layout/LayoutContainer';
-import PageHero from '../components/layout/PageHero';
-import Button from '../components/ui/Button';
-import ButtonLink from '../components/ui/ButtonLink';
+import GameGrid from '../components/GameGrid';
+import HomeHero from '../components/HomeHero';
+import LayoutContainer from '../components/LayoutContainer';
+import PageHero from '../components/PageHero';
+import Button from '../components/Button';
+import ButtonLink from '../components/ButtonLink';
 import { useApp } from '../context/AppContext';
 import { APP_NAME } from '../utils/helpers';
 import { useFeaturedGames } from '../hooks/useFeaturedGames';

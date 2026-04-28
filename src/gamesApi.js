@@ -1,42 +1,26 @@
 import axios from 'axios';
 
-// ——— Steam — Web API key in .env enables this provider. Catalog data comes from the public Store
-// API (details + search; no key is sent to Store endpoints). Dev proxy: /api/steam-store → store.steampowered.com
-//
-// Env resolution (first non-empty wins). Create React App only inlines REACT_APP_* at build time;
-// NEXT_PUBLIC_STEAM_API_KEY works on Next.js / Vite; STEAM_API_KEY is listed for dashboards that
-// use that name — duplicate as REACT_APP_STEAM_WEB_API_KEY on Vercel for CRA builds.
-
-const STEAM_KEY_ENV_NAMES = [
-  'REACT_APP_STEAM_WEB_API_KEY',
+/** Env names checked for a non-empty value (used only as a gate; the Store API requests do not send the key). */
+const STEAM_CATALOG_CREDENTIAL_ENV_NAMES = [
   'NEXT_PUBLIC_STEAM_API_KEY',
-  'STEAM_API_KEY',
+  'REACT_APP_STEAM_WEB_API_KEY',
+  'REACT_APP_STEAM_API_KEY',
 ];
 
-let steamKeyEnvCache;
+let steamCatalogCredentialCache;
 
-function readSteamWebApiKeyFromEnv() {
-  if (steamKeyEnvCache) return steamKeyEnvCache;
-  for (const name of STEAM_KEY_ENV_NAMES) {
+function readSteamCatalogCredentialPresenceFromEnv() {
+  if (steamCatalogCredentialCache != null) return steamCatalogCredentialCache;
+  for (const name of STEAM_CATALOG_CREDENTIAL_ENV_NAMES) {
     const raw = process.env[name];
-    const value = (raw != null ? String(raw) : '').trim();
-    if (value) {
-      steamKeyEnvCache = { value, source: name };
-      return steamKeyEnvCache;
+    const trimmed = (raw != null ? String(raw) : '').trim();
+    if (trimmed.length > 0) {
+      steamCatalogCredentialCache = true;
+      return steamCatalogCredentialCache;
     }
   }
-  steamKeyEnvCache = { value: '', source: null };
-  return steamKeyEnvCache;
-}
-
-/** Resolved Steam Web API key (trimmed), or empty string if unset. */
-export function steamWebApiKey() {
-  return readSteamWebApiKeyFromEnv().value;
-}
-
-/** Which env var supplied the key, or null — for diagnostics only. */
-export function steamWebApiKeySource() {
-  return readSteamWebApiKeyFromEnv().source;
+  steamCatalogCredentialCache = false;
+  return steamCatalogCredentialCache;
 }
 
 let steamEnvDiagnosticsLogged = false;
@@ -45,33 +29,26 @@ function logSteamEnvDiagnostics() {
   if (steamEnvDiagnosticsLogged) return;
   steamEnvDiagnosticsLogged = true;
 
-  const { value, source } = readSteamWebApiKeyFromEnv();
+  const configured = readSteamCatalogCredentialPresenceFromEnv();
   const steamProxySet = (process.env.REACT_APP_STEAM_STORE_PROXY || '').trim().length > 0;
 
-  // TODO(remove): temporary — confirm key is embedded at build time without printing the secret.
-  if (value) {
-    console.info(
-      `[gamesApi] Steam Web API key: loaded (length ${value.length}, source env: ${source})`,
-    );
-  } else {
-    const tried = STEAM_KEY_ENV_NAMES.join(', ');
+  console.info('[gamesApi] Steam catalog credential present:', configured);
+
+  if (!configured) {
+    const tried = STEAM_CATALOG_CREDENTIAL_ENV_NAMES.join(', ');
     console.warn(
-      `[gamesApi] Steam Web API key: missing (checked: ${tried}). ` +
-        'The catalog will be empty until you set REACT_APP_STEAM_WEB_API_KEY and rebuild. ' +
-        'On Vercel, add it for Production (not only Development) and redeploy.',
+      `[gamesApi] Steam catalog disabled — no credential in env (checked: ${tried}). ` +
+        'For Create React App on Vercel, set REACT_APP_STEAM_WEB_API_KEY or REACT_APP_STEAM_API_KEY ' +
+        'for Production and redeploy. NEXT_PUBLIC_STEAM_API_KEY is only inlined if your bundler supports it.',
     );
   }
 
-  if (steamProxySet && !value) {
+  if (steamProxySet && !configured) {
     console.warn(
-      '[gamesApi] REACT_APP_STEAM_STORE_PROXY is set but no Steam Web API key was found; ' +
-        'the proxy path is unused until a key is configured.',
+      '[gamesApi] REACT_APP_STEAM_STORE_PROXY is set but no Steam credential was found; ' +
+        'the proxy path is unused until a credential is configured.',
     );
   }
-}
-
-export function shouldUseSteam() {
-  return steamWebApiKey().length > 0;
 }
 
 function steamStoreBase() {
@@ -94,7 +71,6 @@ function roundRatingToHalf(rating) {
   return Math.round(rating * 2) / 2;
 }
 
-/** Ensure usable absolute URL for img src (protocol-relative, empty, or string "null"). */
 function normalizeImageUrl(url) {
   if (url == null || typeof url !== 'string') return null;
   const u = url.trim();
@@ -119,7 +95,6 @@ function stripSteamHtml(html) {
   return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-/** Popular / recognizable Steam app IDs for the storefront seed list. */
 const STEAM_SEED_APP_IDS = [
   730, 570, 271590, 1174180, 1245620, 1091500, 1599340, 1938090, 252490, 440, 1086940, 413150,
   578080, 359550, 381210, 236850, 377160, 228980, 239140, 8930, 1222670, 1888930, 1627720, 1818450,
@@ -234,38 +209,13 @@ async function steamFetchDetailsBatch(appIds) {
   return games;
 }
 
-export const steamService = {
+const steamService = {
   fetchPopularGames: async (offset = 0, limit = 20) => {
     const ids = STEAM_SEED_APP_IDS.slice(offset, offset + limit);
     if (ids.length === 0) {
       return [];
     }
     return steamFetchDetailsBatch(ids);
-  },
-
-  searchGames: async (query, limit = 20) => {
-    const q = (query || '').trim();
-    if (!q) {
-      return steamService.fetchPopularGames(0, limit);
-    }
-    try {
-      const { data } = await axios.get(`${steamStoreBase()}/api/storesearch/`, {
-        params: { term: q, cc: 'us', l: 'en' },
-        timeout: 15_000,
-      });
-      const items = data?.items || [];
-      const ids = items
-        .filter((it) => it?.type === 'app')
-        .map((it) => it?.id)
-        .filter((id) => id != null)
-        .slice(0, limit);
-      if (ids.length === 0) {
-        return [];
-      }
-      return steamFetchDetailsBatch(ids);
-    } catch {
-      return [];
-    }
   },
 
   fetchGameById: async (id) => {
@@ -280,31 +230,21 @@ export const steamService = {
     }
     return game;
   },
-
-  fetchGamesByGenre: async () => {
-    throw new Error('fetchGamesByGenre is not implemented for Steam in this app');
-  },
-
-  fetchGameReviews: async () => [],
-
-  fetchGameImages: async () => [],
 };
 
 const steamCatalogDisabledService = {
   fetchPopularGames: async () => [],
-  searchGames: async () => [],
   fetchGameById: async () => {
     throw new Error(
-      'Steam catalog is not configured. Set REACT_APP_STEAM_WEB_API_KEY in .env and restart the dev server.',
+      'Steam catalog is not configured. Set NEXT_PUBLIC_STEAM_API_KEY, REACT_APP_STEAM_WEB_API_KEY, ' +
+        'or REACT_APP_STEAM_API_KEY in .env (for CRA use a REACT_APP_* name), restart the dev server, ' +
+        'and on Vercel set the same for Production then redeploy.',
     );
   },
-  fetchGamesByGenre: async () => [],
-  fetchGameReviews: async () => [],
-  fetchGameImages: async () => [],
 };
 
 function resolveGamesService() {
-  if (shouldUseSteam()) {
+  if (readSteamCatalogCredentialPresenceFromEnv()) {
     return steamService;
   }
   return steamCatalogDisabledService;
@@ -313,5 +253,3 @@ function resolveGamesService() {
 export const gamesService = resolveGamesService();
 
 logSteamEnvDiagnostics();
-
-export default gamesService;

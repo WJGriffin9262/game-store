@@ -1,4 +1,4 @@
-import GameCard from '../catalog/GameCard';
+import GameCard from './GameCard';
 
 export default function GameGrid({ games, onAddToCart }) {
   return (

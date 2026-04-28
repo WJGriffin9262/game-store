@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { APP_NAME, SUPPORT_EMAIL } from '../../utils/helpers';
+import { APP_NAME, SUPPORT_EMAIL } from '../utils/helpers';
 import LayoutContainer from './LayoutContainer';
 
 export default function Footer() {

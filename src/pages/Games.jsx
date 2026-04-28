@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import GameGrid from '../components/ui/GameGrid';
-import GamesSkeleton from '../components/catalog/GamesSkeleton';
-import GamesToolbar from '../components/catalog/GamesToolbar';
-import LayoutContainer from '../components/layout/LayoutContainer';
-import PageHero from '../components/layout/PageHero';
-import Button from '../components/ui/Button';
+import GameGrid from '../components/GameGrid';
+import GamesSkeleton from '../components/GamesSkeleton';
+import GamesToolbar from '../components/GamesToolbar';
+import LayoutContainer from '../components/LayoutContainer';
+import PageHero from '../components/PageHero';
+import Button from '../components/Button';
 import { useApp } from '../context/AppContext';
 import { useCatalogFilters } from '../hooks/useCatalogFilters';
 

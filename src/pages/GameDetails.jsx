@@ -1,10 +1,10 @@
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, ShoppingCart } from 'lucide-react';
-import ErrorDisplay from '../components/ui/ErrorDisplay';
-import LayoutContainer from '../components/layout/LayoutContainer';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
-import Button from '../components/ui/Button';
-import ButtonLink from '../components/ui/ButtonLink';
+import ErrorDisplay from '../components/ErrorDisplay';
+import LayoutContainer from '../components/LayoutContainer';
+import LoadingSpinner from '../components/LoadingSpinner';
+import Button from '../components/Button';
+import ButtonLink from '../components/ButtonLink';
 import { useApp } from '../context/AppContext';
 import {
   formatPrice,

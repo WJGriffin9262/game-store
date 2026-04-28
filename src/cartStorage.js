@@ -1,6 +1,5 @@
 /**
  * Cart persistence in localStorage — kept separate from React so it stays easy to test.
- * (Tutorial-style: one small plain JS module instead of a services/ folder.)
  */
 const CART_STORAGE_KEY = 'gamestore_cart';
 const TAX_RATE = 0.0825;

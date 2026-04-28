@@ -1,15 +1,14 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
-import './styles/index.css';
-import Header from './components/layout/Header';
-import Footer from './components/layout/Footer';
-import Home from './pages/Home.jsx';
-import Games from './pages/Games.jsx';
-import GameDetails from './pages/GameDetails.jsx';
-import Cart from './pages/Cart.jsx';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import Games from './pages/Games';
+import GameDetails from './pages/GameDetails';
+import Cart from './pages/Cart';
 import { useRouteOutletAnimation } from './hooks/useRouteOutletAnimation';
 
 /**
- * Root layout + routes. Global styles load once from ./styles/index.css.
+ * Root layout + routes. Global CSS is imported from ./index.css in index.js.
  */
 function App() {
   const location = useLocation();

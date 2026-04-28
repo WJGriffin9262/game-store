@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { LayoutGrid, ShoppingCart } from 'lucide-react';
-import LayoutContainer from '../layout/LayoutContainer';
-import { APP_NAME } from '../../utils/helpers';
+import LayoutContainer from './LayoutContainer';
+import { APP_NAME } from '../utils/helpers';
 
 export default function HomeHero() {
   return (

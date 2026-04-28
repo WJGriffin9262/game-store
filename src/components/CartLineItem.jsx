@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Minus, Plus, Trash2 } from 'lucide-react';
-import { formatPrice, PLACEHOLDER_GAME_IMAGE, handleGameImageError } from '../../utils/helpers';
+import { formatPrice, PLACEHOLDER_GAME_IMAGE, handleGameImageError } from '../utils/helpers';
 
 export default function CartLineItem({ item, onRemove, onUpdateQuantity }) {
   return (

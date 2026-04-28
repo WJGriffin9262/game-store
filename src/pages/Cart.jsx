@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { Store } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import LayoutContainer from '../components/layout/LayoutContainer';
-import PageHero from '../components/layout/PageHero';
-import ButtonLink from '../components/ui/ButtonLink';
-import CartEmptyState from '../components/cart/CartEmptyState';
-import CartItemsPanel from '../components/cart/CartItemsPanel';
-import CartOrderSummary from '../components/cart/CartOrderSummary';
+import LayoutContainer from '../components/LayoutContainer';
+import PageHero from '../components/PageHero';
+import ButtonLink from '../components/ButtonLink';
+import CartEmptyState from '../components/CartEmptyState';
+import CartItemsPanel from '../components/CartItemsPanel';
+import CartOrderSummary from '../components/CartOrderSummary';
 
 export default function Cart() {
   const {

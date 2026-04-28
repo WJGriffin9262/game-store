@@ -27,7 +27,7 @@ Copy `.env.example` to `.env` and add your Steam Web API key **only on your mach
 
 | Variable | Role |
 |----------|------|
-| `REACT_APP_STEAM_WEB_API_KEY` | Required for the catalog. Enables the Steam integration (see `.env.example` for optional alias names and the store proxy). |
+| `REACT_APP_STEAM_WEB_API_KEY` or `REACT_APP_STEAM_API_KEY` | Required for the catalog in this CRA app (inlined at build time). `NEXT_PUBLIC_STEAM_API_KEY` is also read first for compatibility with other bundlers; react-scripts does not inject `NEXT_PUBLIC_*` unless you customize webpack. |
 | `REACT_APP_STEAM_STORE_PROXY` | Set to **`/api/steam-store`** on Vercel so requests use the rewrite in `vercel.json` (same as `setupProxy.js` in dev). |
 
 Restart `npm start` after changing `.env`.
@@ -38,19 +38,34 @@ Restart `npm start` after changing `.env`.
 
 - React 19, React Router 7
 - Context API (`src/context/AppContext.jsx`) for catalog + cart + theme
-- Axios, global styles (`src/styles/index.css`), Lucide icons
+- Axios, global styles (`src/index.css`), Lucide icons
 - Jest + React Testing Library (`src/*.test.js`)
+
+## Entry points (do not treat as dead code)
+
+Use this map before deleting exports: many pieces are **only referenced indirectly**.
+
+| Layer | Entry | Role |
+|-------|--------|------|
+| **Bootstrap** | `src/index.js` | `ReactDOM.createRoot` → wraps `App` in `Router` + `AppProvider` from `src/context/AppContext.jsx`. Imports global `src/index.css`. |
+| **Routes / layout** | `src/App.jsx` | Defines `/`, `/games`, `/games/:id`, `/cart`; composes `Header`, `Footer`, and page components under `src/pages/`. |
+| **Catalog + cart state** | `src/context/AppContext.jsx` | Single source of truth: calls `gamesService` from `src/gamesApi.js`, owns cart/toast/theme. **All catalog fetches go through here** — `gamesApi` is not imported by pages directly. |
+| **Steam HTTP (dev)** | `src/setupProxy.js` | CRA dev-only middleware: `/api/steam-store` → `store.steampowered.com`. Not a React module; required at runtime in development. |
+| **Steam HTTP (prod)** | `vercel.json` | Same path pattern as the dev proxy when deployed on Vercel. |
+
+**Listing vs search:** The app loads pages of popular titles via `gamesService.fetchPopularGames` and filters/sorts in the browser with `src/hooks/useCatalogFilters.js` (including `?search=` from the URL). There is **no** separate server search API in this repo.
+
+### Recent rework (Steam catalog)
+
+The **`gamesService` object exported from `src/gamesApi.js`** (Steam Store adapter: `fetchPopularGames`, `fetchGameById`) **replaces all previous catalog implementations** for this app. Earlier unused surface (`searchGames` on the service, extra context fields, stub genre/reviews/image helpers) was removed on purpose; **do not reintroduce parallel catalog clients** unless you wire every screen to them.
 
 ## Project layout
 
 - `src/pages/` — route screens (Home, Games, GameDetails, Cart)
-- `src/components/layout/` — shell pieces (header, footer, page chrome)
-- `src/components/ui/` — shared controls (buttons, grids, feedback)
-- `src/components/catalog/` — catalog-specific widgets
-- `src/components/cart/` — cart-specific widgets
-- `src/hooks/` — page-level logic hooks
+- `src/components/` — shared UI for header, footer, storefront, cart, and controls
+- `src/hooks/` — reusable hooks
 - `src/utils/` — formatting and small helpers
-- `src/styles/` — global CSS
+- `src/index.css` — global CSS (Tailwind + theme)
 - `src/context/AppContext.jsx` — app-wide state
 - `src/gamesApi.js` — Steam Store adapter and `gamesService`
 - `src/setupProxy.js` — dev-only proxy for Steam Store (CORS)

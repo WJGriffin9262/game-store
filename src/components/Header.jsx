@@ -2,8 +2,8 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Gamepad2, House, Menu, Moon, ShoppingCart, Store, Sun, X } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
-import { APP_NAME } from '../../utils/helpers';
+import { useApp } from '../context/AppContext';
+import { APP_NAME } from '../utils/helpers';
 import LayoutContainer from './LayoutContainer';
 
 export default function Header() {

@@ -132,12 +132,6 @@ const MOCK_GAMES = [
 export function AppProvider({ children }) {
   const [games, setGames] = useState([]);
   const [gamesLoading, setGamesLoading] = useState(false);
-  const [gamesError, setGamesError] = useState(null);
-  const [pagination, setPagination] = useState({
-    count: 0,
-    next: null,
-    previous: null,
-  });
 
   const [cart, setCart] = useState(() => {
     try {
@@ -175,70 +169,19 @@ export function AppProvider({ children }) {
 
   const fetchAllGames = useCallback(async (page = 1, pageSize = 20) => {
     setGamesLoading(true);
-    setGamesError(null);
     try {
       const offset = (page - 1) * pageSize;
       const data = await gamesService.fetchPopularGames(offset, pageSize);
       setGames(data);
-      setPagination({
-        count: data.length,
-        next: data.length === pageSize ? page + 1 : null,
-        previous: page > 1 ? page - 1 : null,
-      });
     } catch {
       setGames(MOCK_GAMES);
-      setPagination({
-        count: MOCK_GAMES.length,
-        next: null,
-        previous: null,
-      });
     } finally {
       setGamesLoading(false);
     }
   }, []);
 
-  const searchGames = useCallback(
-    async (query) => {
-      if (!query) {
-        await fetchAllGames();
-        return;
-      }
-
-      setGamesLoading(true);
-      setGamesError(null);
-      try {
-        const data = await gamesService.searchGames(query, 20);
-        setGames(data);
-        setPagination({
-          count: data.length,
-          next: data.length === 20 ? 2 : null,
-          previous: null,
-        });
-      } catch {
-        const normalizedQuery = query.toLowerCase();
-        const filteredGames = MOCK_GAMES.filter(
-          (game) =>
-            game.title.toLowerCase().includes(normalizedQuery) ||
-            game.description.toLowerCase().includes(normalizedQuery) ||
-            game.genre.toLowerCase().includes(normalizedQuery) ||
-            game.developer.toLowerCase().includes(normalizedQuery),
-        );
-        setGames(filteredGames);
-        setPagination({
-          count: filteredGames.length,
-          next: null,
-          previous: null,
-        });
-      } finally {
-        setGamesLoading(false);
-      }
-    },
-    [fetchAllGames],
-  );
-
   const fetchGameById = useCallback(async (gameId) => {
     setGamesLoading(true);
-    setGamesError(null);
     try {
       const data = await gamesService.fetchGameById(gameId);
       return data;
@@ -303,16 +246,6 @@ export function AppProvider({ children }) {
     setHasUnsavedChanges(false);
   }, []);
 
-  const getCartItem = useCallback(
-    (itemId) => cart.find((item) => item.id === itemId) || null,
-    [cart],
-  );
-
-  const isItemInCart = useCallback(
-    (itemId) => cart.some((item) => item.id === itemId),
-    [cart],
-  );
-
   const { subtotal, tax, total } = cartStorage.calculateTotal(cart);
 
   const showToast = useCallback((msg, duration = 3200) => {
@@ -334,10 +267,7 @@ export function AppProvider({ children }) {
   const value = {
     games,
     loading: gamesLoading,
-    error: gamesError,
-    pagination,
     fetchAllGames,
-    searchGames,
     fetchGameById,
 
     cart,
@@ -345,14 +275,10 @@ export function AppProvider({ children }) {
     subtotal,
     tax,
     total,
-    isEmpty: cart.length === 0,
     addItem,
     removeItem,
     updateQuantity,
     clearAllItems,
-    getCartItem,
-    isItemInCart,
-    hasUnsavedChanges,
 
     showToast,
 

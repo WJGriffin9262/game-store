@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Search, ShoppingBag } from 'lucide-react';
-import LayoutContainer from '../layout/LayoutContainer';
-import GenreSuggestions from '../catalog/GenreSuggestions';
+import LayoutContainer from './LayoutContainer';
+import GenreSuggestions from './GenreSuggestions';
 
 export default function CartEmptyState({ genreSuggestions }) {
   return (

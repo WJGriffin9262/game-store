@@ -5,7 +5,7 @@ import {
   truncateText,
   PLACEHOLDER_GAME_IMAGE,
   handleGameImageError,
-} from '../../utils/helpers';
+} from '../utils/helpers';
 
 export default function GameCard({ game, onAddToCart }) {
   function handleAddToCartClick() {
